@@ -2,6 +2,8 @@
 
 Paste a username or a story link, get a `view-source:` link, paste the page source back, and Sift pulls out the best video and the largest picture for every story slide.
 
+**Live site:** https://saptarshi1996.github.io/sift/
+
 Everything runs in the browser. Nothing is uploaded, and the page makes no network requests of its own (the browser only requests the media links to show previews).
 
 ## Scripts

@@ -2,7 +2,7 @@
 
 A small, client-only React tool. The user gives a username or story link, copies the page source of that story, pastes it back, and Sift pulls out the **best video** and the **largest picture** for every story slide, with previews, copy and open buttons.
 
-No backend, no uploads, no network calls of its own. The browser only requests the media URLs to show previews.
+No backend, no uploads, no network calls of its own. The browser only requests the media URLs to show previews. Live at https://saptarshi1996.github.io/sift/
 
 This React project is a port of an earlier static prototype (see "Legacy prototype"). The UI and behavior were iterated on at length with the user; the decisions below are deliberate, so don't "improve" them without asking.
 
