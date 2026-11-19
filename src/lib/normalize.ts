@@ -6,9 +6,9 @@ const RESERVED = new Set([
   'download', 'directory', 'login', 'locations', 'topics', 'stories',
 ])
 
-// The only place the story host is named. HOSTS[0] is the host links are built on and
-// accepted from; the others are recognised as links so they get a clear error.
-const HOSTS = ['instagram.com', 'instagr.am']
+// The only place the story host is named (tests import it from here). HOSTS[0] is the host
+// links are built on and accepted from; the others are recognised as links so they get a clear error.
+export const HOSTS = ['instagram.com', 'instagr.am']
 const esc = (h: string) => h.replace(/\./g, '\\.')
 const LINK_START = new RegExp(`^(www\\.|m\\.)?(${HOSTS.map(esc).join('|')})\\b`, 'i')
 const STORY_HOST = new RegExp(`^(www\\.|m\\.)?${esc(HOSTS[0])}$`, 'i')

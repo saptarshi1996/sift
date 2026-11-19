@@ -7,11 +7,15 @@ Everything runs in the browser. Nothing is uploaded, and the page makes no netwo
 ## Scripts
 
 ```bash
-npm run dev      # start the dev server
-npm run build    # type-check and build to dist/
-npm run lint     # eslint
-npm run preview  # serve the production build
+npm run dev         # start the dev server
+npm run build       # type-check and build to dist/
+npm run lint        # eslint
+npm test            # run the tests once (vitest)
+npm run test:watch  # re-run tests as you edit
+npm run preview     # serve the production build
 ```
+
+Git hooks (husky, installed by `npm install`): **pre-commit** runs lint and a build, **pre-push** runs the tests. The deploy workflow runs lint, tests and the build, so a failing test also blocks a deploy.
 
 ## How it works
 
@@ -23,7 +27,7 @@ Each slide has its own Video | Thumbnail (or Image) switcher. The "Show all as" 
 
 ## Deploy (GitHub Pages)
 
-Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, builds with `BASE_PATH=/sift/` and publishes `dist/` to GitHub Pages. The site is at `https://saptarshi1996.github.io/sift/`.
+Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, runs the tests, builds with `BASE_PATH=/sift/` and publishes `dist/` to GitHub Pages. The site is at `https://saptarshi1996.github.io/sift/`.
 
 One-time setup: in the repo on GitHub, go to Settings → Pages and set **Source** to **GitHub Actions**. Without that the deploy job fails.
 

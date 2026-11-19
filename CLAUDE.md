@@ -14,7 +14,14 @@ npm run build     # tsc -b && vite build
 npm run lint      # eslint (react-hooks v7 rules are strict)
 ```
 
-Always run `npm run build` and `npm run lint` after changes. There is no test framework; behavior is verified in a browser (see "Testing").
+```bash
+npm test          # vitest run (unit tests for src/lib)
+npm run test:watch
+```
+
+Always run `npm run lint`, `npm test` and `npm run build` after changes. The pure logic in `src/lib` has unit tests; UI behavior is verified in a browser (see "Testing").
+
+**Git hooks** (husky, `.husky/`, installed by the `prepare` script): `pre-commit` runs `npm run lint` and `npm run build`; `pre-push` runs `npm test`. Don't bypass them with `--no-verify`; fix the failure instead. Same setup as the sibling `toolshed` project.
 
 ## Deploy
 
@@ -23,7 +30,7 @@ GitHub Pages, via `.github/workflows/deploy.yml` (same setup as the sibling `too
 - `vite.config.ts` sets `base: process.env.BASE_PATH ?? '/'`. Never hard-code `/sift/` as the base, or local dev breaks.
 - The app is a single page with no client-side routes, so unlike `toolshed` there is no `404.html` copy step. Add one only if a router is introduced.
 - To test the Pages build locally, both `build` and `preview` need `BASE_PATH=/sift/` (the preview server reads it at start-up; without it `/sift/...` returns the home page). Open `http://localhost:4173/sift/`.
-- The workflow has no test step because there are no tests yet; add `npm test` before the build if tests are added.
+- The workflow runs `npm run lint`, `npm test` and `npm run build` in that order, so a failing test blocks the deploy.
 
 ## How it works
 
@@ -90,15 +97,21 @@ The source contains JSON with an `"items":[ ... ]` array, one entry per slide:
 
 ## Testing
 
-No automated tests yet. To verify behavior:
+**Unit tests** (vitest, colocated as `src/lib/*.test.ts`, run in a plain Node environment, no jsdom):
+
+- `normalize.test.ts` covers `normalizeStoryUrl`: usernames, `@name`, whitespace and case, the 30-character limit, `view-source:` prefixes, profile links in every shape (scheme, `www`/`m.`, queries, fragments, `/_u/` deep links), story/highlight links kept as given, non-profile paths, the bare home page, look-alike hosts, other schemes.
+- `extract.test.ts` covers `extractArray` (nesting, brackets and escaped quotes in strings, broken/unterminated JSON), `resolution`, and `extractMedia` (duplicate entries, best video by resolution with ties keeping page order, largest picture by area, entries without a url, image-only and mixed stories, slides that are dropped keeping the others' numbers, the no-`items` fallback, escaped slashes).
+- Fixtures are built inside the tests with made-up hosts. Tests get the real host from the exported `HOSTS` in `normalize.ts` so the brand name stays out of every other file (see the naming rule above).
+- The suite was checked by deliberately breaking the code (reversed sort orders, a narrower resolution pattern, ignoring escapes, no lowercasing, accepting look-alike hosts, allowing reserved paths, and so on); each break made at least one test fail.
+- When changing `src/lib`, add or adjust a test in the same change. UI components have no unit tests yet.
+
+**Browser checks** for the UI:
 
 - Run the dev server and drive the page in a browser. Set React-controlled fields via the native value setter plus an `input` event (`Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el, v)`), then click.
 - A real saved story page is needed as input (~0.5 MB HTML). Keep it **out of the repo**; for testing, copy it temporarily into `public/` and delete it afterwards.
 - Simulate image slides by renaming `"video_versions":[` to something else in the sample text (all of them → all-image story; only the second occurrence → mixed story).
 - Check the phone layout at 375px (no horizontal scroll; slide titles must stay on one line) and a wide layout (~1650px, four columns).
 - Real clipboard tests overwrite the user's clipboard; mention it if you do one.
-
-Edge cases worth covering if tests are added: `normalizeStoryUrl` (usernames, `@name`, trailing slashes/queries, `/_u/` deep links, `/p/` and `/explore/` rejection, look-alike hosts (the real host used as a prefix of another domain), story and highlight links kept as given) and `extractMedia` (duplicate video entries, image-only slides, missing `items`).
 
 ## Legacy prototype
 
