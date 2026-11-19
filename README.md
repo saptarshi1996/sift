@@ -21,6 +21,20 @@ npm run preview  # serve the production build
 
 Each slide has its own Video | Thumbnail (or Image) switcher. The "Show all as" switcher in the header changes every slide at once.
 
+## Deploy (GitHub Pages)
+
+Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, builds with `BASE_PATH=/sift/` and publishes `dist/` to GitHub Pages. The site is at `https://saptarshi1996.github.io/sift/`.
+
+One-time setup: in the repo on GitHub, go to Settings → Pages and set **Source** to **GitHub Actions**. Without that the deploy job fails.
+
+A project site is served from `/<repo>/`, so `vite.config.ts` reads `BASE_PATH` for `base` (it is `/` locally). To check the Pages build locally:
+
+```bash
+BASE_PATH=/sift/ npm run build && BASE_PATH=/sift/ npm run preview   # then open http://localhost:4173/sift/
+```
+
+The preview needs `BASE_PATH` too; without it the server answers `/sift/...` with the home page.
+
 ## Structure
 
 ```

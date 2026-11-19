@@ -16,6 +16,15 @@ npm run lint      # eslint (react-hooks v7 rules are strict)
 
 Always run `npm run build` and `npm run lint` after changes. There is no test framework; behavior is verified in a browser (see "Testing").
 
+## Deploy
+
+GitHub Pages, via `.github/workflows/deploy.yml` (same setup as the sibling `toolshed` project): on push to `main` it runs `npm ci`, `npm run lint`, `npm run build` with `BASE_PATH=/sift/`, and publishes `dist/`. Live at `https://saptarshi1996.github.io/sift/`. Pages must be set to the **GitHub Actions** source in the repo settings (one-time).
+
+- `vite.config.ts` sets `base: process.env.BASE_PATH ?? '/'`. Never hard-code `/sift/` as the base, or local dev breaks.
+- The app is a single page with no client-side routes, so unlike `toolshed` there is no `404.html` copy step. Add one only if a router is introduced.
+- To test the Pages build locally, both `build` and `preview` need `BASE_PATH=/sift/` (the preview server reads it at start-up; without it `/sift/...` returns the home page). Open `http://localhost:4173/sift/`.
+- The workflow has no test step because there are no tests yet; add `npm test` before the build if tests are added.
+
 ## How it works
 
 1. **Generate** turns a username / `@name` / profile link / story link into a story URL (`normalizeStoryUrl`) and shows its `view-source:` form in a read-only field.
