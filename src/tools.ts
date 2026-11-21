@@ -75,6 +75,6 @@ export const TOOLS: Tool[] = [
     Icon: GlobeIcon,
     noun: 'item',
     extract: extractAny,
-    bookmark: { instruction: 'Drag this button to your bookmarks bar. Then open a story or post and click Sift It from the bar.' },
+    bookmark: { instruction: 'Drag this button to your bookmarks bar. Click it on the page you want to sift.' },
   },
 ]
