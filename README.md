@@ -29,7 +29,7 @@ Each slide has its own Video | Thumbnail (or Image) switcher. The "Show all as" 
 
 ## Deploy (GitHub Pages)
 
-Each tool has its own path (`/sift/stories`, `/sift/posts`, `/sift/sift-posts`), so a reload stays on the same tab. GitHub Pages has no server-side routing, so the build copies `dist/index.html` to `dist/404.html` (the `postbuild` script); Pages serves it for those paths.
+Each tool has its own path (`/sift/stories`, `/sift/posts`, `/sift/sift-media`), so a reload stays on the same tab. GitHub Pages has no server-side routing, so the build copies `dist/index.html` to `dist/404.html` (the `postbuild` script); Pages serves it for those paths.
 
 Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, runs the tests, builds with `BASE_PATH=/sift/` and publishes `dist/` to GitHub Pages. The site is at `https://saptarshi1996.github.io/sift/`.
 
@@ -48,7 +48,7 @@ The preview needs `BASE_PATH` too; without it the server answers `/sift/...` wit
 ```
 src/
   App.tsx                  shell, active tab and routing
-  tools.ts                 the tabs (Stories, Posts, Sift posts) and their wording
+  tools.ts                 the tabs (Stories, Posts, Sift Media) and their wording
   types.ts                 Slide / Kind types
   lib/
     normalize.ts           username / profile / story / post link -> URL

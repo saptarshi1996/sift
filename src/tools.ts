@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react'
 import { GlobeIcon, PostsIcon, StoriesIcon } from './components/Icons.tsx'
-import { extractMedia, extractPost } from './lib/extract.ts'
+import { extractAny, extractMedia, extractPost } from './lib/extract.ts'
 import { normalizePostUrl, normalizeStoryUrl, type NormalizeResult } from './lib/normalize.ts'
 import type { Slide } from './types.ts'
 
@@ -70,11 +70,11 @@ export const TOOLS: Tool[] = [
     },
   },
   {
-    id: 'sift-posts',
-    title: 'Sift posts',
+    id: 'sift-media',
+    title: 'Sift Media',
     Icon: GlobeIcon,
-    noun: 'post',
-    extract: extractPost,
-    bookmark: { instruction: 'Drag this button to your bookmarks bar. Then open a post and click Sift It from the bar.' },
+    noun: 'item',
+    extract: extractAny,
+    bookmark: { instruction: 'Drag this button to your bookmarks bar. Then open a story or post and click Sift It from the bar.' },
   },
 ]

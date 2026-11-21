@@ -189,7 +189,7 @@ export default function MediaTool({ tool, initialData }: { tool: Tool; initialDa
             draggable
             title="Drag me to the bookmarks bar"
             onClick={(e) => e.preventDefault()}
-            ref={(el) => el?.setAttribute('href', buildBookmarklet(window.location.origin + pathForTool('sift-posts', BASE)))}
+            ref={(el) => el?.setAttribute('href', buildBookmarklet(window.location.origin + pathForTool(tool.id, BASE)))}
           >
             Sift It
           </a>

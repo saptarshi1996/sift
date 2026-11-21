@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { pathForTool, toolIdFromPath } from './route.ts'
 
-const IDS = ['stories', 'posts', 'sift-posts']
+const IDS = ['stories', 'posts', 'sift-media']
 
 describe('pathForTool', () => {
   it('appends the id to the base', () => {
     expect(pathForTool('posts', '/')).toBe('/posts')
-    expect(pathForTool('sift-posts', '/sift/')).toBe('/sift/sift-posts')
+    expect(pathForTool('sift-media', '/sift/')).toBe('/sift/sift-media')
   })
 })
 
@@ -14,7 +14,7 @@ describe('toolIdFromPath', () => {
   it.each([
     ['/', '/stories', 'stories'],
     ['/', '/posts', 'posts'],
-    ['/sift/', '/sift/sift-posts', 'sift-posts'],
+    ['/sift/', '/sift/sift-media', 'sift-media'],
     ['/sift/', '/sift/posts/', 'posts'],
     ['/sift/', '/sift/posts/extra', 'posts'],
   ])('base %s, path %s -> %s', (base, path, id) => {

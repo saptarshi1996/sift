@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractArray, extractMedia, extractPost, resolution } from './extract.ts'
+import { extractAny, extractArray, extractMedia, extractPost, resolution } from './extract.ts'
 
 // ---- fixtures (made-up hosts and data; no real pages) ----
 const efg = (tag: string) => encodeURIComponent(btoa(JSON.stringify({ vencode_tag: tag })))
@@ -231,5 +231,37 @@ describe('extractPost', () => {
   it('numbers items from 1 and drops empty ones but keeps the others\' numbers', () => {
     const slides = extractPost(page([{ carousel_media: [child('a'), {}, child('c')] }]))
     expect(slides.map((s) => s.item)).toEqual([1, 3])
+  })
+})
+
+describe('extractAny', () => {
+  const pic = (name: string) => ({ image_versions2: candidates([name, 640, 800]) })
+
+  it('reads a post: every carousel item, not just the first entry', () => {
+    const slides = extractAny(page([{ carousel_media: [pic('a'), pic('b'), pic('c')] }]))
+    expect(slides.map((s) => s.thumbnail?.url)).toEqual([image('a'), image('b'), image('c')])
+  })
+
+  it('reads a story: every entry of items, including more than one', () => {
+    const slides = extractAny(page([{ video_versions: [{ url: video('v', 720) }], ...pic('a') }, pic('b'), pic('c')]))
+    expect(slides.map((s) => s.type)).toEqual(['video', 'image', 'image'])
+    expect(slides.map((s) => s.item)).toEqual([1, 2, 3])
+  })
+
+  it('reads a single post or reel (no carousel) as one slide', () => {
+    const slides = extractAny(page([{ video_versions: [{ url: video('r', 1080) }], ...pic('cover') }]))
+    expect(slides).toHaveLength(1)
+    expect(slides[0]).toMatchObject({ type: 'video', video: { res: 1080 } })
+  })
+
+  it('treats null or empty carousel_media as a story-shaped entry', () => {
+    for (const carousel_media of [null, []]) {
+      expect(extractAny(page([{ carousel_media, ...pic('only') }, pic('two')]))).toHaveLength(2)
+    }
+  })
+
+  it('returns nothing when there is nothing to read', () => {
+    expect(extractAny('')).toEqual([])
+    expect(extractAny(page([]))).toEqual([])
   })
 })

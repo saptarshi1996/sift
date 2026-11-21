@@ -109,3 +109,12 @@ export function extractPost(html: string): Slide[] {
   if (!post) return []
   return toSlides(Array.isArray(post.carousel_media) && post.carousel_media.length ? post.carousel_media : [post])
 }
+
+/**
+ * Reads what the bookmarklet sends, whatever page it ran on: a post's items sit under
+ * `carousel_media`, a story's slides are the entries of `items` themselves.
+ */
+export function extractAny(json: string): Slide[] {
+  const [first] = extractArray(json, '"items":[') as RawItem[]
+  return Array.isArray(first?.carousel_media) && first.carousel_media.length ? extractPost(json) : extractMedia(json)
+}

@@ -2,21 +2,22 @@ import { useEffect, useState } from 'react'
 import MediaTool from './components/MediaTool.tsx'
 import Sidebar from './components/Sidebar.tsx'
 import TopBar from './components/TopBar.tsx'
-import { decodePostHash } from './lib/handoff.ts'
+import { decodeHandoff } from './lib/handoff.ts'
 import { pathForTool, toolIdFromPath } from './lib/route.ts'
 import { BASE, TOOLS } from './tools.ts'
 
 const IDS = TOOLS.map((t) => t.id)
-const IMPORT_TOOL = 'sift-posts'
+/** The tool that receives what the bookmarklet sent, from a story page or a post page. */
+const IMPORT_TOOL = 'sift-media'
 const fromUrl = () => toolIdFromPath(window.location.pathname, BASE, IDS) ?? TOOLS[0].id
 
 /**
- * Read once at load: post data sent by the bookmarklet in the URL fragment, and which tool the
+ * Read once at load: story or post data sent by the bookmarklet in the URL fragment, and which tool the
  * URL names. Then the address is rewritten to the tool's own path (this also drops the fragment
  * and sends '/' or an unknown path to the first tool).
  */
-const IMPORTED = decodePostHash(window.location.hash)
-const START = IMPORTED !== null ? IMPORT_TOOL : fromUrl()
+const IMPORTED = decodeHandoff(window.location.hash)
+const START = IMPORTED ? IMPORT_TOOL : fromUrl()
 history.replaceState(null, '', pathForTool(START, BASE) + window.location.search)
 
 function App() {
@@ -54,7 +55,7 @@ function App() {
           {/* Every page stays mounted so a pasted source survives switching tabs. */}
           {TOOLS.map((t) => (
             <div key={t.id} hidden={t.id !== active}>
-              <MediaTool tool={t} initialData={t.id === IMPORT_TOOL && IMPORTED !== null ? IMPORTED : undefined} />
+              <MediaTool tool={t} initialData={IMPORTED && t.id === IMPORT_TOOL ? IMPORTED.data : undefined} />
             </div>
           ))}
         </main>

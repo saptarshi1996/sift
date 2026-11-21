@@ -1,11 +1,17 @@
-import { HASH_KEY } from './snippet.ts'
+import type { HandoffKind } from './snippet.ts'
 
-/** Reads the post JSON the bookmarklet put in the URL fragment (`#post=<base64>`), or null. */
-export function decodePostHash(hash: string): string | null {
-  const m = hash.match(new RegExp(`^#${HASH_KEY}=(.+)$`))
+export interface Handoff {
+  kind: HandoffKind
+  /** The JSON the bookmarklet sent. */
+  data: string
+}
+
+/** Reads what the bookmarklet put in the URL fragment (`#story=<base64>` or `#post=<base64>`), or null. */
+export function decodeHandoff(hash: string): Handoff | null {
+  const m = hash.match(/^#(story|post)=(.+)$/)
   if (!m) return null
   try {
-    return atob(decodeURIComponent(m[1]))
+    return { kind: m[1] as HandoffKind, data: atob(decodeURIComponent(m[2])) }
   } catch {
     return null
   }
