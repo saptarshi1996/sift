@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HOSTS, normalizeStoryUrl } from './normalize.ts'
+import { HOSTS, normalizePostUrl, normalizeStoryUrl } from './normalize.ts'
 
 const HOST = HOSTS[0]
 const OTHER = HOSTS[1]
@@ -143,5 +143,52 @@ describe('normalizeStoryUrl: other hosts', () => {
 
   it('reports a malformed link', () => {
     expect(normalizeStoryUrl('https://')).toEqual(error('That does not look like a valid link.'))
+  })
+})
+
+describe('normalizePostUrl', () => {
+  const post = (path: string) => ({ url: `https://www.${HOST}/${path}/` })
+  it.each([
+    ['post', `https://www.${HOST}/p/Cabc_1-x/`, 'p/Cabc_1-x'],
+    ['post under a username', `https://www.${HOST}/someuser/p/Cabc123/`, 'someuser/p/Cabc123'],
+    ['reel', `https://www.${HOST}/reel/Cabc123/`, 'reel/Cabc123'],
+    ['reel under a username', `https://www.${HOST}/someuser/reel/Cabc123/`, 'someuser/reel/Cabc123'],
+    ['tv', `https://www.${HOST}/tv/Cabc123/`, 'tv/Cabc123'],
+    ['no trailing slash', `https://www.${HOST}/p/Cabc123`, 'p/Cabc123'],
+    ['no scheme', `${HOST}/p/Cabc123/`, 'p/Cabc123'],
+    ['mobile host', `https://m.${HOST}/p/Cabc123/`, 'p/Cabc123'],
+    ['tracking query and fragment', `https://www.${HOST}/p/Cabc123/?igsh=abc#x`, 'p/Cabc123'],
+    ['view-source prefix', `view-source:https://www.${HOST}/p/Cabc123/`, 'p/Cabc123'],
+    ['surrounding whitespace', `  https://www.${HOST}/p/Cabc123/  `, 'p/Cabc123'],
+  ])('%s', (_label, input, path) => {
+    expect(normalizePostUrl(input)).toEqual(post(path))
+  })
+
+  it('keeps the case of the post code', () => {
+    expect(normalizePostUrl(`https://www.${HOST}/p/AbC/`)).toEqual(post('p/AbC'))
+  })
+
+  it('asks for input when empty', () => {
+    expect(normalizePostUrl('   ')).toEqual(error('Enter a post link.'))
+  })
+
+  it.each([`https://www.${HOST}/someuser/`, `https://www.${HOST}/stories/someuser/`, `https://www.${HOST}/`])(
+    'rejects %s as not a post link',
+    (input) => {
+      expect(normalizePostUrl(input)).toEqual(error('That is not a post link. Paste a link to a post or reel.'))
+    },
+  )
+
+  it('rejects a bare username', () => {
+    expect(normalizePostUrl('someuser')).toEqual(error('That is not a supported link.'))
+  })
+
+  it('rejects a post link with no code', () => {
+    expect(normalizePostUrl(`https://www.${HOST}/p/`)).toEqual(error('That post link has no post code in it.'))
+  })
+
+  it('rejects other hosts and schemes', () => {
+    expect(normalizePostUrl('https://example.test/p/Cabc123/')).toEqual(error('That is not a supported link.'))
+    expect(normalizePostUrl(`ftp://www.${HOST}/p/Cabc123/`)).toEqual(error('That is not a supported link.'))
   })
 })

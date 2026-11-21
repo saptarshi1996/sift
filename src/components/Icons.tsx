@@ -32,6 +32,22 @@ export const StoriesIcon = (p: IconProps) => (
   </Svg>
 )
 
+export const PostsIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+    <circle cx="9" cy="9" r="1.6" fill="currentColor" />
+    <path d="M4 17l5-5 4 4 3-3 4.5 4.5" />
+  </Svg>
+)
+
+export const GlobeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
+  </Svg>
+)
+
 export const SearchIcon = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="11" cy="11" r="7" />

@@ -11,6 +11,7 @@ interface RawCandidate {
 interface RawItem {
   video_versions?: RawVideo[]
   image_versions2?: { candidates?: RawCandidate[] }
+  carousel_media?: RawItem[] | null
 }
 
 /**
@@ -72,6 +73,15 @@ function bestThumb(item: RawItem): ThumbMedia | null {
   return t ? { url: t.url, width: t.width, height: t.height } : null
 }
 
+function toSlides(items: RawItem[]): Slide[] {
+  return items
+    .map((item, i): Slide => {
+      const video = bestVideo(item)
+      return { item: i + 1, type: video ? 'video' : 'image', video, thumbnail: bestThumb(item) }
+    })
+    .filter((s) => s.video || s.thumbnail)
+}
+
 /**
  * One entry per story slide. Falls back to a single pseudo-item when the page has no
  * "items" array.
@@ -86,10 +96,16 @@ export function extractMedia(html: string): Slide[] {
       },
     ]
   }
-  return items
-    .map((item, i): Slide => {
-      const video = bestVideo(item)
-      return { item: i + 1, type: video ? 'video' : 'image', video, thumbnail: bestThumb(item) }
-    })
-    .filter((s) => s.video || s.thumbnail)
+  return toSlides(items)
+}
+
+/**
+ * One entry per item of a post page. The post is the first entry of "items"; a multi-item
+ * post lists its items under `carousel_media`, a single post or reel is the entry itself.
+ * Other "items" arrays on the page (related posts) are ignored.
+ */
+export function extractPost(html: string): Slide[] {
+  const [post] = extractArray(html, '"items":[') as RawItem[]
+  if (!post) return []
+  return toSlides(Array.isArray(post.carousel_media) && post.carousel_media.length ? post.carousel_media : [post])
 }

@@ -56,3 +56,33 @@ export function normalizeStoryUrl(raw: string): NormalizeResult {
   }
   return toStory(seg[0])
 }
+
+const POST_KINDS = new Set(['p', 'reel', 'reels', 'tv'])
+const POST_CODE = /^[A-Za-z0-9_-]+$/
+
+/**
+ * Accepts a post or reel link: /p/CODE/, /reel/CODE/, /tv/CODE/, optionally under a
+ * username (/username/p/CODE/). Returns the clean post URL (tracking query dropped).
+ */
+export function normalizePostUrl(raw: string): NormalizeResult {
+  const s = String(raw || '').trim().replace(/^view-source:/i, '').trim()
+  if (!s) return { error: 'Enter a post link.' }
+
+  let u: URL
+  try {
+    u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : 'https://' + s)
+  } catch {
+    return { error: 'That does not look like a valid link.' }
+  }
+  if (!/^https?:$/.test(u.protocol) || !STORY_HOST.test(u.hostname)) {
+    return { error: 'That is not a supported link.' }
+  }
+
+  const seg = u.pathname.split('/').filter(Boolean)
+  const kind = seg.findIndex((x, i) => i < 2 && POST_KINDS.has(x.toLowerCase()))
+  if (kind === -1 || (kind === 1 && !isUser(seg[0]))) {
+    return { error: 'That is not a post link. Paste a link to a post or reel.' }
+  }
+  if (!POST_CODE.test(seg[kind + 1] ?? '')) return { error: 'That post link has no post code in it.' }
+  return { url: `https://www.${HOSTS[0]}/${seg.slice(0, kind + 2).join('/')}/` }
+}

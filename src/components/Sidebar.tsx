@@ -1,18 +1,16 @@
-import type { ComponentType } from 'react'
-import { FunnelIcon, LayersIcon, StoriesIcon } from './Icons.tsx'
+import { TOOLS } from '../tools.ts'
+import { FunnelIcon, LayersIcon } from './Icons.tsx'
 
-interface NavItem {
-  id: string
-  name: string
-  Icon: ComponentType<{ className?: string }>
+interface Props {
+  query: string
+  active: string
+  onSelect: (id: string) => void
 }
 
-const ITEMS: NavItem[] = [{ id: 'stories', name: 'Stories', Icon: StoriesIcon }]
-
 /** Left navigation. Collapses to an icon strip (CSS, via the `collapsed` class on .app). */
-export default function Sidebar({ query }: { query: string }) {
+export default function Sidebar({ query, active, onSelect }: Props) {
   const q = query.trim().toLowerCase()
-  const shown = ITEMS.filter((it) => !q || it.name.toLowerCase().includes(q))
+  const shown = TOOLS.filter((t) => !q || t.title.toLowerCase().includes(q))
 
   return (
     <aside className="sidebar">
@@ -29,17 +27,20 @@ export default function Sidebar({ query }: { query: string }) {
             <span className="lbl">Media</span>
           </div>
         )}
-        {shown.map(({ id, name, Icon }) => (
+        {shown.map(({ id, title, Icon }) => (
           <a
             key={id}
-            className="nav-item active"
+            className={`nav-item${id === active ? ' active' : ''}`}
             href={`#${id}`}
-            aria-current="page"
-            title={name}
-            onClick={(e) => e.preventDefault()}
+            aria-current={id === active ? 'page' : undefined}
+            title={title}
+            onClick={(e) => {
+              e.preventDefault()
+              onSelect(id)
+            }}
           >
             <Icon />
-            <span className="lbl">{name}</span>
+            <span className="lbl">{title}</span>
           </a>
         ))}
         {shown.length === 0 && <p className="nav-empty">No matches</p>}

@@ -57,7 +57,25 @@ The source contains JSON with an `"items":[ ... ]` array, one entry per slide:
 - Slide 2 of the sample story is a 1080p **VP9-in-MP4** file (older video); slide 1 is H.264. Both play in Chrome. A video that won't play shows a message pointing at the open icon.
 - A cached old copy of the page can hide changes in the preview browser; navigate with a cache-busting query (`?v=2`) when in doubt.
 
-## State model (App.tsx)
+## Tools: Stories and Posts
+
+The sidebar has three items under **Media**: **Stories**, **Posts** and **Sift posts**, each its own page (Stories and Posts have the same three panels and results; Sift posts has a bookmark button instead, see below). Both are defined in `src/tools.ts` (title, icon, instruction line, placeholder, `normalize`, `extract`) and rendered by `src/components/MediaTool.tsx`. `App.tsx` only holds the shell and the active tab. Every page stays mounted (`hidden` on the inactive one) so a pasted source survives switching tabs; each page has its own state. Adding another tool means adding an entry to `TOOLS`.
+
+- **Posts** takes a post, reel or tv link (`normalizePostUrl`: `/p/CODE/`, `/reel/CODE/`, `/tv/CODE/`, optionally under a username; tracking queries dropped; profile and story links are rejected). Stories behavior is unchanged: a post link on the Stories page is still not a story link.
+- `extractPost` reads only the **first** `"items":[` entry (the post; later arrays are related posts). A multi-item post lists its items under `carousel_media` and each child becomes a slide; a single post or reel is the entry itself. Children use the same `video_versions` / `image_versions2` shape as story slides, so best-video and largest-picture logic is shared. Image candidates include square crops, but the largest by area is still the full-size one (1242×1656 in the sample).
+- Video ranking for post videos is unverified (the sample post has only images); it assumes the same `efg` resolution tag as stories.
+
+### Sift posts (third tab, id `public-posts`)
+
+Same post links as Posts, but no login, no `view-source:` and no pasting. Public post pages add the post's media to the **live page** as a JSON `<script>` after load, so it is not in the original source (a plain `fetch` of the page, or `view-source:`, returns only a shell and a login wall; the browser also blocks cross-origin reads, so Sift cannot fetch it itself). So something has to run on the post page: the tab shows a draggable **Sift post** bookmark (a `javascript:` link built by `buildBookmarklet` in `src/lib/snippet.ts`). On a post page the user clicks it; it finds the post by the code in the page URL, keeps only the media fields, and `window.open`s Sift with `#post=<base64 JSON>`. `App.tsx` reads that fragment once at load (`decodePostHash`, `src/lib/handoff.ts`), clears it, opens the Sift posts tab and passes the data to `MediaTool` as `initialData`, which runs `extractPost` on it. The fragment is never sent to a server, so Sift stays client-only. Reloading Sift shows nothing (the data is not stored).
+
+- Tools are configured in `src/tools.ts`: a tool has either `steps` (the three panels) or `bookmark` (this tab). The link `href` is set through a ref callback because React 19 refuses `javascript:` in `href` props.
+- The bookmarklet's output shape is `{"items":[{"carousel_media":[{video_versions, image_versions2}]}]}`, which `extractPost` reads unchanged. In this logged-out data the post sits under a `...if_not_gated_logged_out` key and image candidates carry only a `url` (no width/height); the **first candidate is the original size** (no `sNNNxNNN` in its `stp` param; checked by loading them: 1440x1440 and 1242x1242 matched `original_width/height`). The bookmarklet labels it with the item's `original_width/height`; if candidates do carry sizes it takes the largest.
+- The code must contain no literal `%` (the browser percent-decodes a `javascript:` URL before running it) and must not name the platform. Sift's own URL is baked in at render time from `window.location`, so it works on localhost and on Pages.
+- `snippet.test.ts` runs the bookmarklet against a fake page (via `new Function`; no node types are installed, so don't import `node:` modules in tests) and covers `decodePostHash`.
+- Verified in headless Chrome on one public carousel post (3 images): a browser-initiated `javascript:` navigation (what clicking a bookmark does) ran under the site's CSP and opened Sift with all 3 at original size. A page script doing `location.href = 'javascript:...'` **is** blocked by the site's CSP, so test with CDP `Page.navigate`, not that. The user then used the real bookmark in their own browser and confirmed it works (decision: keep the bookmark; a browser extension was discussed and not built, since it would only be needed if bookmarks get blocked or for private posts). **Untested:** other browsers (Safari and Firefox especially), private posts (the logged-out data shape is all that was inspected), and videos/reels in this logged-out shape (the bookmarklet passes `video_versions` urls through and relies on the same `efg` resolution tag).
+
+## State model (per page, MediaTool.tsx)
 
 - `slides: Slide[] | null` — `null` = nothing shown, `[]` = "Not found".
 - `viewPref: 'video' | 'thumbnail'` — the global "Show all as" choice. Survives re-extracting. A slide that lacks that view falls back to the other.
@@ -100,6 +118,8 @@ The source contains JSON with an `"items":[ ... ]` array, one entry per slide:
 **Unit tests** (vitest, colocated as `src/lib/*.test.ts`, run in a plain Node environment, no jsdom):
 
 - `normalize.test.ts` covers `normalizeStoryUrl`: usernames, `@name`, whitespace and case, the 30-character limit, `view-source:` prefixes, profile links in every shape (scheme, `www`/`m.`, queries, fragments, `/_u/` deep links), story/highlight links kept as given, non-profile paths, the bare home page, look-alike hosts, other schemes.
+- `snippet.test.ts` covers `buildBookmarklet` (carousel, single post, video urls, sizes, picking the right post, non-JSON scripts, not-a-post and missing-data alerts) and `decodePostHash`.
+- `extract.test.ts` also covers `extractPost` (carousel items, single post, first entry only, empty); `normalize.test.ts` covers `normalizePostUrl`.
 - `extract.test.ts` covers `extractArray` (nesting, brackets and escaped quotes in strings, broken/unterminated JSON), `resolution`, and `extractMedia` (duplicate entries, best video by resolution with ties keeping page order, largest picture by area, entries without a url, image-only and mixed stories, slides that are dropped keeping the others' numbers, the no-`items` fallback, escaped slashes).
 - Fixtures are built inside the tests with made-up hosts. Tests get the real host from the exported `HOSTS` in `normalize.ts` so the brand name stays out of every other file (see the naming rule above).
 - The suite was checked by deliberately breaking the code (reversed sort orders, a narrower resolution pattern, ignoring escapes, no lowercasing, accepting look-alike hosts, allowing reserved paths, and so on); each break made at least one test fail.
@@ -118,7 +138,7 @@ The source contains JSON with an `"items":[ ... ]` array, one entry per slide:
 `/Users/saptarshisengupta/Developer/scripts/sift/` holds the original static version:
 
 - `index.html` — single-file prototype this React app mirrors (feature parity was checked against it).
-- `extract-media.js` — Node CLI: `node extract-media.js [source.html]` prints a JSON array of slides (best video and largest thumbnail). Its extraction logic duplicates `src/lib/extract.ts`; **keep the two in sync** if the logic changes (the only difference is `Buffer` vs `atob` for base64).
+- `extract-media.js` — Node CLI: `node extract-media.js [source.html]` prints a JSON array of slides (best video and largest thumbnail); `--post` reads a post page (default `source-post.html`, a sample saved post with 5 images). Its extraction logic duplicates `src/lib/extract.ts`; **keep the two in sync** if the logic changes (the only difference is `Buffer` vs `atob` for base64).
 - `source.html` — a sample saved story page (two video slides) used for testing.
 - `.claude/launch.json` — preview configs (`sift-static` on 8123 for the prototype, `sift-react` on 5173 for this project).
 

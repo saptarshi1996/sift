@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractArray, extractMedia, resolution } from './extract.ts'
+import { extractArray, extractMedia, extractPost, resolution } from './extract.ts'
 
 // ---- fixtures (made-up hosts and data; no real pages) ----
 const efg = (tag: string) => encodeURIComponent(btoa(JSON.stringify({ vencode_tag: tag })))
@@ -187,5 +187,49 @@ describe('extractMedia: pages without an items array', () => {
   it('returns nothing when the page has no media at all', () => {
     expect(extractMedia('<html>nothing here</html>')).toEqual([])
     expect(extractMedia('')).toEqual([])
+  })
+})
+
+describe('extractPost', () => {
+  const child = (name: string, vid?: string) => ({
+    ...(vid ? { video_versions: [{ url: video(vid, 720) }] } : {}),
+    image_versions2: candidates([`${name}-small`, 320, 427], [name, 1080, 1440], [`${name}-square`, 1080, 1080]),
+  })
+
+  it('returns one slide per carousel item, not just the cover', () => {
+    const slides = extractPost(
+      page([{ image_versions2: candidates(['cover', 1080, 1440]), carousel_media: [child('a'), child('b', 'vb'), child('c')] }]),
+    )
+    expect(slides.map((s) => [s.item, s.type])).toEqual([[1, 'image'], [2, 'video'], [3, 'image']])
+    expect(slides.map((s) => s.thumbnail?.url)).toEqual([image('a'), image('b'), image('c')])
+    expect(slides[1].video?.url).toBe(video('vb', 720))
+  })
+
+  it('treats null or empty carousel_media as a single post', () => {
+    for (const carousel_media of [null, []]) {
+      const slides = extractPost(page([{ image_versions2: candidates(['only', 640, 800]), carousel_media }]))
+      expect(slides).toHaveLength(1)
+      expect(slides[0].thumbnail?.url).toBe(image('only'))
+    }
+  })
+
+  it('reads a single-video post (reel)', () => {
+    const [slide] = extractPost(page([{ video_versions: [{ url: video('r', 1080) }], image_versions2: candidates(['rc', 720, 1280]) }]))
+    expect(slide).toMatchObject({ item: 1, type: 'video', video: { res: 1080 } })
+  })
+
+  it('uses only the first entry, ignoring related posts later on the page', () => {
+    const slides = extractPost(page([{ carousel_media: [child('a')] }, { carousel_media: [child('x'), child('y')] }]))
+    expect(slides).toHaveLength(1)
+  })
+
+  it('returns nothing when the page has no items', () => {
+    expect(extractPost('<html></html>')).toEqual([])
+    expect(extractPost(page([]))).toEqual([])
+  })
+
+  it('numbers items from 1 and drops empty ones but keeps the others\' numbers', () => {
+    const slides = extractPost(page([{ carousel_media: [child('a'), {}, child('c')] }]))
+    expect(slides.map((s) => s.item)).toEqual([1, 3])
   })
 })
