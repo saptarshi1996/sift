@@ -29,6 +29,8 @@ Each slide has its own Video | Thumbnail (or Image) switcher. The "Show all as" 
 
 ## Deploy (GitHub Pages)
 
+Each tool has its own path (`/sift/stories`, `/sift/posts`, `/sift/sift-posts`), so a reload stays on the same tab. GitHub Pages has no server-side routing, so the build copies `dist/index.html` to `dist/404.html` (the `postbuild` script); Pages serves it for those paths.
+
 Pushing to `main` runs `.github/workflows/deploy.yml`, which lints, runs the tests, builds with `BASE_PATH=/sift/` and publishes `dist/` to GitHub Pages. The site is at `https://saptarshi1996.github.io/sift/`.
 
 One-time setup: in the repo on GitHub, go to Settings → Pages and set **Source** to **GitHub Actions**. Without that the deploy job fails.
@@ -45,14 +47,18 @@ The preview needs `BASE_PATH` too; without it the server answers `/sift/...` wit
 
 ```
 src/
-  App.tsx                  state and page layout
+  App.tsx                  shell, active tab and routing
+  tools.ts                 the tabs (Stories, Posts, Sift posts) and their wording
   types.ts                 Slide / Kind types
   lib/
-    normalize.ts           username / profile / story link -> story URL
+    normalize.ts           username / profile / story / post link -> URL
     extract.ts             page source -> slides
+    route.ts               tab <-> URL path
+    snippet.ts, handoff.ts the Sift It bookmark and reading what it sends
     clipboard.ts           clipboard write with a fallback
   hooks/useCopy.ts         copy + "Copied" feedback state
   components/
+    MediaTool.tsx          one tab: input panels (or the bookmark) and results
     Sidebar.tsx, TopBar.tsx
     ClearableFields.tsx    inputs with an x button
     SegToggle.tsx          the Video | Thumbnail switcher

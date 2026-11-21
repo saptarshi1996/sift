@@ -1,27 +1,46 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import MediaTool from './components/MediaTool.tsx'
 import Sidebar from './components/Sidebar.tsx'
 import TopBar from './components/TopBar.tsx'
 import { decodePostHash } from './lib/handoff.ts'
-import { TOOLS } from './tools.ts'
+import { pathForTool, toolIdFromPath } from './lib/route.ts'
+import { BASE, TOOLS } from './tools.ts'
 
-/** Post data sent by the bookmarklet in the URL fragment; read once, then the fragment is cleared. */
-const IMPORTED = (() => {
-  const data = decodePostHash(window.location.hash)
-  if (data !== null) history.replaceState(null, '', window.location.pathname + window.location.search)
-  return data
-})()
-const IMPORT_TOOL = 'public-posts'
+const IDS = TOOLS.map((t) => t.id)
+const IMPORT_TOOL = 'sift-posts'
+const fromUrl = () => toolIdFromPath(window.location.pathname, BASE, IDS) ?? TOOLS[0].id
+
+/**
+ * Read once at load: post data sent by the bookmarklet in the URL fragment, and which tool the
+ * URL names. Then the address is rewritten to the tool's own path (this also drops the fragment
+ * and sends '/' or an unknown path to the first tool).
+ */
+const IMPORTED = decodePostHash(window.location.hash)
+const START = IMPORTED !== null ? IMPORT_TOOL : fromUrl()
+history.replaceState(null, '', pathForTool(START, BASE) + window.location.search)
 
 function App() {
   const [collapsed, setCollapsed] = useState(() => window.matchMedia('(max-width: 800px)').matches)
   const [query, setQuery] = useState('')
-  const [active, setActive] = useState(IMPORTED !== null ? IMPORT_TOOL : TOOLS[0].id)
+  const [active, setActive] = useState(START)
   const current = TOOLS.find((t) => t.id === active) ?? TOOLS[0]
+
+  // Back / forward move between tools.
+  useEffect(() => {
+    const onPop = () => setActive(fromUrl())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const select = (id: string) => {
+    if (id === active) return
+    history.pushState(null, '', pathForTool(id, BASE))
+    setActive(id)
+  }
 
   return (
     <div className={`app${collapsed ? ' collapsed' : ''}`}>
-      <Sidebar query={query} active={active} onSelect={setActive} />
+      <Sidebar query={query} active={active} onSelect={select} />
 
       <div className="main">
         <TopBar

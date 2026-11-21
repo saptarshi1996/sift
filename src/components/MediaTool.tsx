@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
+import { pathForTool } from '../lib/route.ts'
 import { buildBookmarklet } from '../lib/snippet.ts'
-import type { Tool } from '../tools.ts'
+import { BASE, type Tool } from '../tools.ts'
 import { ClearableInput, ClearableTextArea } from './ClearableFields.tsx'
 import ResultsPanel from './ResultsPanel.tsx'
 import SegToggle from './SegToggle.tsx'
@@ -188,7 +189,7 @@ export default function MediaTool({ tool, initialData }: { tool: Tool; initialDa
             draggable
             title="Drag me to the bookmarks bar"
             onClick={(e) => e.preventDefault()}
-            ref={(el) => el?.setAttribute('href', buildBookmarklet(window.location.origin + window.location.pathname))}
+            ref={(el) => el?.setAttribute('href', buildBookmarklet(window.location.origin + pathForTool('sift-posts', BASE)))}
           >
             Sift It
           </a>

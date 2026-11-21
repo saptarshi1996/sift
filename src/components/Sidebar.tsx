@@ -1,4 +1,5 @@
-import { TOOLS } from '../tools.ts'
+import { pathForTool } from '../lib/route.ts'
+import { BASE, TOOLS } from '../tools.ts'
 import { FunnelIcon, LayersIcon } from './Icons.tsx'
 
 interface Props {
@@ -31,10 +32,12 @@ export default function Sidebar({ query, active, onSelect }: Props) {
           <a
             key={id}
             className={`nav-item${id === active ? ' active' : ''}`}
-            href={`#${id}`}
+            href={pathForTool(id, BASE)}
             aria-current={id === active ? 'page' : undefined}
             title={title}
             onClick={(e) => {
+              // Let modified clicks (new tab, new window) use the real link.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
               e.preventDefault()
               onSelect(id)
             }}

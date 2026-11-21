@@ -28,7 +28,7 @@ Always run `npm run lint`, `npm test` and `npm run build` after changes. The pur
 GitHub Pages, via `.github/workflows/deploy.yml` (same setup as the sibling `toolshed` project): on push to `main` it runs `npm ci`, `npm run lint`, `npm run build` with `BASE_PATH=/sift/`, and publishes `dist/`. Live at `https://saptarshi1996.github.io/sift/`. Pages must be set to the **GitHub Actions** source in the repo settings (one-time).
 
 - `vite.config.ts` sets `base: process.env.BASE_PATH ?? '/'`. Never hard-code `/sift/` as the base, or local dev breaks.
-- The app is a single page with no client-side routes, so unlike `toolshed` there is no `404.html` copy step. Add one only if a router is introduced.
+- Each tool has its own path (`/sift/stories`, `/sift/posts`, `/sift/sift-posts`; see "Routes"). GitHub Pages answers unknown paths with `404.html`, so the `postbuild` script copies `dist/index.html` to `dist/404.html` (same as `toolshed`). Without it, reloading on `/sift/posts` is a Pages 404. `vite preview` and the dev server fall back to `index.html` on their own, so they do **not** prove this works; check that `dist/404.html` exists.
 - To test the Pages build locally, both `build` and `preview` need `BASE_PATH=/sift/` (the preview server reads it at start-up; without it `/sift/...` returns the home page). Open `http://localhost:4173/sift/`.
 - The workflow runs `npm run lint`, `npm test` and `npm run build` in that order, so a failing test blocks the deploy.
 
@@ -65,7 +65,11 @@ The sidebar has three items under **Media**: **Stories**, **Posts** and **Sift p
 - `extractPost` reads only the **first** `"items":[` entry (the post; later arrays are related posts). A multi-item post lists its items under `carousel_media` and each child becomes a slide; a single post or reel is the entry itself. Children use the same `video_versions` / `image_versions2` shape as story slides, so best-video and largest-picture logic is shared. Image candidates include square crops, but the largest by area is still the full-size one (1242×1656 in the sample).
 - Video ranking for post videos is unverified (the sample post has only images); it assumes the same `efg` resolution tag as stories.
 
-### Sift posts (third tab, id `public-posts`)
+### Routes
+
+Tabs are real paths, so a reload or a shared link stays on the tab: `${BASE}stories`, `${BASE}posts`, `${BASE}sift-posts` (the tool `id` is the path; `BASE` is `import.meta.env.BASE_URL`, exported from `src/tools.ts`). No router library: `src/lib/route.ts` (`pathForTool`, `toolIdFromPath`, unit-tested) plus the History API in `App.tsx` (`pushState` on a sidebar click, a `popstate` listener for back/forward). At load the URL is read once and rewritten to the canonical path, so `/` and unknown paths become the Stories path. Sidebar items are real `<a href>` links (a modified click, e.g. cmd-click, opens a new tab). The bookmark's Sift URL is `origin + BASE + 'sift-posts'`; an old bookmark that opens the site root with `#post=` still lands on Sift posts because `App.tsx` forces that tool whenever the fragment carries data.
+
+### Sift posts (third tab, id `sift-posts`)
 
 Same post links as Posts, but no login, no `view-source:` and no pasting. Public post pages add the post's media to the **live page** as a JSON `<script>` after load, so it is not in the original source (a plain `fetch` of the page, or `view-source:`, returns only a shell and a login wall; the browser also blocks cross-origin reads, so Sift cannot fetch it itself). So something has to run on the post page: the tab shows a draggable **Sift It** bookmark (a `javascript:` link built by `buildBookmarklet` in `src/lib/snippet.ts`). On a post page the user clicks it; it finds the post by the code in the page URL, keeps only the media fields, and `window.open`s Sift with `#post=<base64 JSON>`. `App.tsx` reads that fragment once at load (`decodePostHash`, `src/lib/handoff.ts`), clears it, opens the Sift posts tab and passes the data to `MediaTool` as `initialData`, which runs `extractPost` on it. The fragment is never sent to a server, so Sift stays client-only. Reloading Sift shows nothing (the data is not stored).
 
@@ -118,6 +122,7 @@ Same post links as Posts, but no login, no `view-source:` and no pasting. Public
 **Unit tests** (vitest, colocated as `src/lib/*.test.ts`, run in a plain Node environment, no jsdom):
 
 - `normalize.test.ts` covers `normalizeStoryUrl`: usernames, `@name`, whitespace and case, the 30-character limit, `view-source:` prefixes, profile links in every shape (scheme, `www`/`m.`, queries, fragments, `/_u/` deep links), story/highlight links kept as given, non-profile paths, the bare home page, look-alike hosts, other schemes.
+- `route.test.ts` covers `pathForTool` and `toolIdFromPath` (both bases, trailing slash, unknown and wrong-case paths, round trip).
 - `snippet.test.ts` covers `buildBookmarklet` (carousel, single post, video urls, sizes, picking the right post, non-JSON scripts, not-a-post and missing-data alerts) and `decodePostHash`.
 - `extract.test.ts` also covers `extractPost` (carousel items, single post, first entry only, empty); `normalize.test.ts` covers `normalizePostUrl`.
 - `extract.test.ts` covers `extractArray` (nesting, brackets and escaped quotes in strings, broken/unterminated JSON), `resolution`, and `extractMedia` (duplicate entries, best video by resolution with ties keeping page order, largest picture by area, entries without a url, image-only and mixed stories, slides that are dropped keeping the others' numbers, the no-`items` fallback, escaped slashes).

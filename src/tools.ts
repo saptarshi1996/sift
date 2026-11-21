@@ -5,6 +5,9 @@ import { normalizePostUrl, normalizeStoryUrl, type NormalizeResult } from './lib
 import type { Slide } from './types.ts'
 
 /** Three panels: link in, source link out, source pasted back. */
+/** The site's base path, ending with a slash ('/' locally, '/sift/' on Pages). */
+export const BASE = import.meta.env.BASE_URL
+
 export interface Steps {
   instruction: string
   placeholder: string
@@ -67,7 +70,7 @@ export const TOOLS: Tool[] = [
     },
   },
   {
-    id: 'public-posts',
+    id: 'sift-posts',
     title: 'Sift posts',
     Icon: GlobeIcon,
     noun: 'post',
