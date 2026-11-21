@@ -190,7 +190,7 @@ export default function MediaTool({ tool, initialData }: { tool: Tool; initialDa
             onClick={(e) => e.preventDefault()}
             ref={(el) => el?.setAttribute('href', buildBookmarklet(window.location.origin + window.location.pathname))}
           >
-            Sift post
+            Sift It
           </a>
         </section>
       )}
