@@ -228,8 +228,77 @@ describe('story pages', () => {
     expect(slides[1].thumbnail?.url).toBe(cdn('b-big'))
   })
 
-  it('works on a highlight page', async () => {
-    expect((await fromStory([story('h', 720)], '/stories/highlights/18000/')).h.kind).toBe('story')
+  describe('highlight pages (the data sits under a connection key, identified by the id in the address)', () => {
+    const highlightOf = (id: string, ...items: unknown[]) => ({
+      id: `highlight:${id}`,
+      reel_type: 'highlight_reel',
+      user: { username: 'someuser' },
+      title: 'Cook',
+      items,
+    })
+    const connection = (...nodes: unknown[]) =>
+      JSON.stringify({
+        require: [{ data: { xdt_api__v1__feed__reels_media__connection: { edges: nodes.map((node) => ({ node })) } } }],
+      })
+    const runHighlight = (path: string, text: string, fetched?: string | Error) => run(path, [json(text)], fetched)
+
+    it('sends every slide of the highlight, tagged as a story, readable by extractMedia', async () => {
+      const text = connection(highlightOf('18000', story('a', 720), story('b'), story('c', 720)))
+      const { opened, alerts } = await runHighlight('/stories/highlights/18000/', text)
+      expect(alerts).toEqual([])
+      const h = received(opened)
+      expect(h.kind).toBe('story')
+      const slides = extractMedia(h.data)
+      expect(slides.map((x) => x.type)).toEqual(['video', 'image', 'video'])
+      expect(slides[0].video).toMatchObject({ url: videoUrl('a', 720), res: 720 })
+      expect(slides[0].thumbnail).toMatchObject({ url: cdn('a-big'), width: 640, height: 1136 })
+    })
+
+    it('picks the highlight named in the address when the page lists several', async () => {
+      const text = connection(highlightOf('111', story('one')), highlightOf('222', story('two'), story('three')))
+      const { opened } = await runHighlight('/stories/highlights/222/', text)
+      expect(extractMedia(received(opened).data).map((x) => x.thumbnail?.url)).toEqual([cdn('two-big'), cdn('three-big')])
+    })
+
+    it('refuses a highlight the address does not name (the page was opened by clicking inside the app)', async () => {
+      const { opened, alerts, closed } = await runHighlight('/stories/highlights/999/', connection(highlightOf('111', story('x'))))
+      expect(opened).toEqual([])
+      expect(messages(alerts)).toEqual(['Story data not found. Reload the story page and try again.'])
+      expect(closed).toBe(1)
+    })
+
+    it('does not accept a user story as the highlight', async () => {
+      const { opened } = await run('/stories/highlights/18000/', [json(reels(story('a', 720)))])
+      expect(opened).toEqual([])
+    })
+
+    it('does not check the username (the id in the address is what identifies it)', async () => {
+      const node = { ...highlightOf('18000', story('a', 720)), user: { username: 'someoneelse' } }
+      expect((await runHighlight('/stories/highlights/18000/', connection(node))).opened).toHaveLength(1)
+    })
+
+    it('fetches the page again when the live page holds a different highlight', async () => {
+      const { opened, alerts, fetches } = await runHighlight(
+        '/stories/highlights/222/',
+        connection(highlightOf('111', story('stale'))),
+        html(json(connection(highlightOf('222', story('fresh'))))),
+      )
+      expect(alerts).toEqual([])
+      expect(fetches).toBe(1)
+      expect(extractMedia(received(opened).data)[0].thumbnail?.url).toBe(cdn('fresh-big'))
+    })
+
+    it('handles a long highlight (dozens of slides)', async () => {
+      const items = Array.from({ length: 33 }, (_, i) => story(`s${i}`, i % 3 === 0 ? 720 : undefined))
+      const { opened } = await runHighlight('/stories/highlights/18000/', connection(highlightOf('18000', ...items)))
+      expect(extractMedia(received(opened).data)).toHaveLength(33)
+    })
+
+    it('alerts when the address has no highlight id', async () => {
+      const { opened, alerts } = await runHighlight('/stories/highlights/', connection(highlightOf('18000', story('a'))))
+      expect(opened).toEqual([])
+      expect(messages(alerts)).toEqual(['Story data not found. Reload the story page and try again.'])
+    })
   })
 
   it('uses the first reel when the page lists several', async () => {
@@ -265,10 +334,6 @@ describe('story pages', () => {
       const { opened, alerts } = await run('/stories/SomeUser/', stale({ username: 'someuser' }))
       expect(alerts).toEqual([])
       expect(opened).toHaveLength(1)
-    })
-
-    it('does not check highlight pages (their address has no username)', async () => {
-      expect((await run('/stories/highlights/18000/', stale({ username: 'someuser' }))).opened).toHaveLength(1)
     })
 
     it('accepts a reel that names no user', async () => {

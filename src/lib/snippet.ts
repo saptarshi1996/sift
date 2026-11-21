@@ -8,7 +8,10 @@
  *
  * - Post: the object whose `code` is the code in the page URL (a carousel keeps its children).
  * - Story: the first reel's `items` under `reels_media`, only if the reel's user matches the user
- *   in the page URL. Highlight pages skip that check.
+ *   in the page URL.
+ * - Highlight (`/stories/highlights/<id>/`): the reel whose `id` is `highlight:<id>` (it sits under a
+ *   `...reels_media__connection` key, not `reels_media`). The id in the URL is what proves it is the
+ *   right one, so there is no username check.
  * - Post images: the first candidate is the original size and carries no width/height, so it is
  *   labelled with the item's original_width/original_height. If candidates do carry sizes, the
  *   largest one is used.
@@ -35,10 +38,12 @@ const CORE =
   // one try on a list of scripts: {kind,json} on success, {error} otherwise (retry:1 when fetching the page again may help)
   'const attempt=sc=>{' +
   'if(/^\\/stories\\//.test(location.pathname)){' +
-  "const reel=find(sc,'reels_media',o=>Array.isArray(o.reels_media)&&o.reels_media[0]?.items?.length?o.reels_media[0]:null);" +
+  "const seg=location.pathname.split('/');const hl=seg[2]==='highlights'?'highlight:'+seg[3]:'';" +
+  "const reel=hl?find(sc,hl,o=>o.id===hl&&Array.isArray(o.items)&&o.items.length?o:null)" +
+  ":find(sc,'reels_media',o=>Array.isArray(o.reels_media)&&o.reels_media[0]?.items?.length?o.reels_media[0]:null);" +
   "if(!reel)return{error:'Story data not found. Reload the story page and try again.',retry:1,why:'no story'};" +
-  "const u=location.pathname.split('/')[2];" +
-  "if(u!=='highlights'&&reel.user?.username&&reel.user.username.toLowerCase()!==u.toLowerCase())" +
+  "const u=seg[2];" +
+  "if(!hl&&reel.user?.username&&reel.user.username.toLowerCase()!==u.toLowerCase())" +
   "return{error:'This page holds the story of another user. Reload the story page and try again.',retry:1,why:'story of '+reel.user.username};" +
   "return{kind:'story',json:JSON.stringify({items:reel.items.map(one)})}}" +
   'const c=location.pathname.match(/\\/(?:p|reel|reels|tv)\\/([\\w-]+)/)?.[1];' +
