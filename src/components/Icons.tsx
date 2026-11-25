@@ -27,8 +27,8 @@ export const LayersIcon = (p: IconProps) => (
 
 export const StoriesIcon = (p: IconProps) => (
   <Svg {...p}>
-    <rect x="5.5" y="2" width="13" height="20" rx="3.5" />
-    <path d="M10 8.2v7.6l6-3.8z" fill="currentColor" />
+    <circle cx="12" cy="12" r="9.5" strokeDasharray="3.2 2.6" />
+    <path d="M10.2 8.6v6.8L15.8 12z" fill="currentColor" />
   </Svg>
 )
 
@@ -45,13 +45,6 @@ export const GlobeIcon = (p: IconProps) => (
     <circle cx="12" cy="12" r="9" />
     <path d="M3 12h18" />
     <path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z" />
-  </Svg>
-)
-
-export const SearchIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <circle cx="11" cy="11" r="7" />
-    <path d="M20 20l-3.5-3.5" />
   </Svg>
 )
 

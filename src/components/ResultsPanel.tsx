@@ -22,9 +22,6 @@ export default function ResultsPanel({ slides, kindOf, onSlideKind }: Props) {
       <div className="panel-body">
         {found ? (
           <>
-            <p className="step">
-              If a video doesn't play here, use the open icon at the top right of it to watch it in a new tab.
-            </p>
             <div className="slides">
               {slides.map((s) => (
                 <SlideCard

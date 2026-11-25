@@ -22,7 +22,6 @@ history.replaceState(null, '', pathForTool(START, BASE) + window.location.search
 
 function App() {
   const [collapsed, setCollapsed] = useState(() => window.matchMedia('(max-width: 800px)').matches)
-  const [query, setQuery] = useState('')
   const [active, setActive] = useState(START)
   const current = TOOLS.find((t) => t.id === active) ?? TOOLS[0]
 
@@ -41,15 +40,10 @@ function App() {
 
   return (
     <div className={`app${collapsed ? ' collapsed' : ''}`}>
-      <Sidebar query={query} active={active} onSelect={select} />
+      <Sidebar active={active} onSelect={select} />
 
       <div className="main">
-        <TopBar
-          title={current.title}
-          onToggleSidebar={() => setCollapsed((c) => !c)}
-          query={query}
-          onQuery={setQuery}
-        />
+        <TopBar title={current.title} onToggleSidebar={() => setCollapsed((c) => !c)} />
 
         <main className="content">
           {/* Every page stays mounted so a pasted source survives switching tabs. */}

@@ -3,15 +3,12 @@ import { BASE, TOOLS } from '../tools.ts'
 import { FunnelIcon, LayersIcon } from './Icons.tsx'
 
 interface Props {
-  query: string
   active: string
   onSelect: (id: string) => void
 }
 
 /** Left navigation. Collapses to an icon strip (CSS, via the `collapsed` class on .app). */
-export default function Sidebar({ query, active, onSelect }: Props) {
-  const q = query.trim().toLowerCase()
-  const shown = TOOLS.filter((t) => !q || t.title.toLowerCase().includes(q))
+export default function Sidebar({ active, onSelect }: Props) {
 
   return (
     <aside className="sidebar">
@@ -22,13 +19,11 @@ export default function Sidebar({ query, active, onSelect }: Props) {
         <span className="lbl">Sift</span>
       </div>
       <nav>
-        {shown.length > 0 && (
-          <div className="nav-group">
-            <LayersIcon />
-            <span className="lbl">Media</span>
-          </div>
-        )}
-        {shown.map(({ id, title, Icon }) => (
+        <div className="nav-group">
+          <LayersIcon />
+          <span className="lbl">Media</span>
+        </div>
+        {TOOLS.map(({ id, title, Icon }) => (
           <a
             key={id}
             className={`nav-item${id === active ? ' active' : ''}`}
@@ -46,7 +41,6 @@ export default function Sidebar({ query, active, onSelect }: Props) {
             <span className="lbl">{title}</span>
           </a>
         ))}
-        {shown.length === 0 && <p className="nav-empty">No matches</p>}
       </nav>
     </aside>
   )

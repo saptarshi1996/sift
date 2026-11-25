@@ -27,7 +27,7 @@ export default function MediaTool({ tool, initialData }: { tool: Tool; initialDa
   // ---- results ----
   const [slides, setSlides] = useState<Slide[] | null>(() => (initialData ? tool.extract(initialData) : null))
   /** The global "Show all as" choice; slides without that view fall back to the other one. */
-  const [viewPref, setViewPref] = useState<Kind>('video')
+  const [viewPref, setViewPref] = useState<Kind>('thumbnail')
   /** Per-slide choices that differ from the global one. */
   const [overrides, setOverrides] = useState<Record<number, Kind>>({})
 
@@ -83,26 +83,22 @@ export default function MediaTool({ tool, initialData }: { tool: Tool; initialDa
     <>
       <div className="page-head">
         <h1>{tool.title}</h1>
-        <div className="seg-wrap">
-          <span>Show all as</span>
-          <SegToggle
-            ariaLabel="Show all slides as"
-            onPick={(k) => {
-              setViewPref(k)
-              setOverrides({})
-            }}
-            items={[
-              {
-                kind: 'video',
-                label: 'Video',
-                pressed: pressed('video'),
-                disabled: allImages,
-                title: allImages ? `No videos in this ${tool.noun}` : undefined,
-              },
-              { kind: 'thumbnail', label: allImages ? 'Image' : 'Thumbnail', pressed: pressed('thumbnail') },
-            ]}
-          />
-        </div>
+        {!allImages && (
+          <div className="seg-wrap">
+            <span>Show all as</span>
+            <SegToggle
+              ariaLabel="Show all slides as"
+              onPick={(k) => {
+                setViewPref(k)
+                setOverrides({})
+              }}
+              items={[
+                { kind: 'video', label: 'Video', pressed: pressed('video') },
+                { kind: 'thumbnail', label: 'Thumbnail', pressed: pressed('thumbnail') },
+              ]}
+            />
+          </div>
+        )}
       </div>
 
       {steps ? (

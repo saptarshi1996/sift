@@ -98,28 +98,28 @@ No `view-source:` and no pasting: **one tab and one bookmark serve stories, post
 ## State model (per page, MediaTool.tsx)
 
 - `slides: Slide[] | null` — `null` = nothing shown, `[]` = "Not found".
-- `viewPref: 'video' | 'thumbnail'` — the global "Show all as" choice. Survives re-extracting. A slide that lacks that view falls back to the other.
+- `viewPref: 'video' | 'thumbnail'` — the global "Show all as" choice; **starts as `thumbnail`**, so every video slide opens on its thumbnail (user requirement, 2026-11-25). Survives re-extracting. A slide that lacks that view falls back to the other.
 - `overrides: Record<slideItem, Kind>` — per-slide choices. Cleared on Extract and on any global click.
 - A slide's kind = `overrides[item] ?? (slide[viewPref] ? viewPref : slide.video ? 'video' : 'thumbnail')`.
-- Global button highlight is **derived**: a button is pressed only when every slide that has that view is showing it, so after changing one slide alone, neither global button is highlighted. If every slide is an image, the global buttons read **Video (disabled) | Image**.
-- Slides with no video are "images": their switcher says **Image** instead of **Thumbnail**, the badge says `Image · WxH`, and Video is disabled.
+- Global button highlight is **derived**: a button is pressed only when every slide that has that view is showing it, so after changing one slide alone, neither global button is highlighted. If every slide is an image, the global switcher is **not shown at all**.
+- Slides with no video are "images": they have **no switcher** (nothing to switch), and the badge says `Image · WxH`.
 - `SlideMedia` is keyed by kind so switching stops the old video.
 
 ## UI decisions (user preferences, keep)
 
-- **Dark theme only** (`color-scheme: dark`, tokens on `:root` in `src/index.css`). No light mode.
-- App-shell layout: sidebar (brand "Sift", group "Media", items "Stories", "Posts", "Sift Media"), top bar (sidebar toggle, breadcrumb "Media / <current tab>", search), page header with the tab's title and the global switcher at the far right, then the tab's panels (three for Stories and Posts, the Sift It button for Sift Media), then Results.
+- **Dark theme only** (`color-scheme: dark`, tokens on `:root` in `src/index.css`). No light mode. **Look (redesigned 2026-11-25 at the user's request, CSS-only apart from a chip class):** navy-slate surfaces, indigo accent `#5e72e4`, Open Sans (self-hosted through the `@fontsource-variable/open-sans` package, imported in `main.tsx`; no font CDN), a gradient band behind the top bar and page header with the panels overlapping its lower edge, card panels with soft shadows instead of borders, Results header as a small uppercase label with an indigo count pill (accent dot), each slide a card with an indigo `Video` / teal `Image` chip. No design-template name or credit anywhere.
+- App-shell layout: sidebar (brand "Sift", group "Media", items "Stories", "Posts", "Sift Media"), top bar (sidebar toggle, breadcrumb "Media / <current tab>"; the search box was removed on 2026-11-25), page header with the tab's title and the global switcher at the far right, then the tab's panels (three for Stories and Posts, the Sift It button for Sift Media), then Results.
 - Collapsed sidebar is a 66px **icon rail**, not hidden. It starts collapsed on screens ≤ 800px.
-- Sidebar item is indented to align with the group label (like the reference app the user supplied).
-- The search box filters sidebar items only. No ⌘K shortcut (removed on request); Esc clears it.
+- Sidebar item is indented to align with the group label (like the reference app the user supplied). The active item has a tinted fill and a 3px accent bar, not a solid fill.
+- No search box (removed on request); the sidebar always lists every tool. The Stories icon is a dashed ring with a play triangle.
 - **No numbers or section headers** on the three input panels; each has one instruction line above its field. Keep the instruction wording as is.
-- **Buttons are all plain neutral** (Generate, Copy, Extract): same size (112×40), 8px radius, no colored/primary button. Inputs are 40px, 8px radius, and match button height.
+- **Panel buttons (Generate, Copy, Extract, Sift It) use the accent** (indigo gradient with a soft shadow, lifts on hover; the user chose this in the redesign): same size (112×40), 8px radius. Secondary controls (switchers, icon buttons) stay neutral, with the pressed state in the accent. Inputs are 40px, 8px radius, and match button height.
 - Buttons sit **below** their field, left-aligned.
 - Every editable field has a round × clear button that appears when it has text. The source-link field is read-only and has none.
 - Empty-state errors are red messages under the field, not button text changes: empty Generate, empty Copy ("Nothing to copy yet. Generate a link first."), empty Extract ("Paste the page source first.").
-- Focus style: thin accent border on inputs; thin 1px outline on buttons/links (keyboard only). No big glow.
+- Focus style: accent border plus a faint 3px accent ring on inputs; thin 1px outline on buttons/links (keyboard only).
 - **No platform or brand name in the UI or the docs** (README, this file): not in UI text, errors, instruction lines or documentation (the user asked for this explicitly, twice, and repeated it on 2026-11-21 when shortening the Sift Media instruction line). In source code it is tolerated (the user: "in source code i guess its fine"), but in practice it still appears only as the host constant below; tests take the host from `HOSTS`, so don't spread it further. Keep fixtures and sample data generic (made-up hosts and usernames). The one unavoidable exception is the host constant at the top of `src/lib/normalize.ts`, which is needed to build story links and validate input; keep it the only place the host is named, and don't add the name anywhere else. The generated `view-source:` link necessarily contains the host at runtime. The page is named **Stories**; the icons are generic (the Stories icon is a phone frame with a play triangle, Media is a stack of layers) and must not imitate the platform's logo.
-- Results: slides in an auto-fill grid (`minmax(250px, 1fr)`, 24px gap, 32px row gap), so about four fit across on a ~1650px screen. One 9:16 tile per slide, one view at a time (not side by side; that was rejected).
+- Results: slides in an auto-fill grid (`minmax(264px, 1fr)`, 24px gap, 32px row gap), so about four fit across on a ~1650px screen. One 9:16 tile per slide, one view at a time (not side by side; that was rejected).
 - Each tile: frosted badge top-left (`Video · 720p`, `Thumbnail · 640×1136`, `Image · …`), and two round icon buttons top-right (copy link, open in new tab) with custom tooltips. Copy shows a green check and a "Copied" tooltip for 1.5 s. There is no button row under the tile.
 - Videos start **without native controls**, showing the full frame with a round play button, so the video tile looks the same height as the thumbnail. Controls appear after the first play.
 - Page title is "Sift".

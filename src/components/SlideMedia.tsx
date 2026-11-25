@@ -81,7 +81,7 @@ export default function SlideMedia({ slide, kind }: { slide: Slide; kind: Kind }
           referrerPolicy="no-referrer"
         />
       )}
-      <div className="chip">{chip}</div>
+      <div className={`chip ${isVideo ? 'video' : 'image'}`}>{chip}</div>
       {isVideo && !failed && !controls && (
         <button type="button" className="play" aria-label="Play video" onClick={play} />
       )}
